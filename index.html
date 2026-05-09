@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Ôn Thi - High Score Edition</title>
+    <style>
+        :root {
+            --primary: #2c3e50; --secondary: #34495e; --accent: #3498db;
+            --success: #27ae60; --danger: #e74c3c; --light: #ecf0f1;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .container { width: 100%; max-width: 800px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        .hidden { display: none; }
+        
+        /* Form & Buttons */
+        input[type="text"], input[type="password"], select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { padding: 12px 25px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; margin: 5px; }
+        button:hover { background: #2980b9; transform: scale(1.02); }
+        
+        /* Menu Cards */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 20px; }
+        .card { padding: 25px 10px; background: var(--light); cursor: pointer; border-radius: 12px; font-weight: bold; border: 2px solid transparent; transition: 0.3s; }
+        .card:hover { border-color: var(--accent); background: #e1f5fe; }
+
+        /* UI TRẮC NGHIỆM & ĐIỀN SỐ */
+        .question { text-align: left; background: #fafafa; padding: 20px; border-radius: 12px; margin-bottom: 25px; border-left: 5px solid var(--accent); }
+        .options input[type="radio"] { display: none; }
+        .option-item {
+            display: block; background: white; border: 2px solid #e0e0e0; border-radius: 10px;
+            padding: 15px 20px; margin-bottom: 10px; cursor: pointer; transition: 0.2s;
+            position: relative; font-weight: 500; color: var(--secondary);
+        }
+        .option-item:hover { border-color: var(--accent); background-color: #f7fbff; }
+        .options input[type="radio"]:checked + .option-item {
+            border-color: var(--success); background-color: #e8f5e9; color: var(--success);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+        }
+        .option-item::before { content: attr(data-label); margin-right: 15px; font-weight: bold; color: #95a5a6; }
+        .answer-input { width: 120px; font-size: 18px; font-weight: bold; text-align: center; border: 2px solid var(--accent); border-radius: 8px; padding: 8px; }
+
+        /* Bảng xếp hạng */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th { background: var(--primary); color: white; padding: 12px; }
+        td { border: 1px solid #ddd; padding: 10px; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .btn-home { background: var(--secondary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="login-screen">
+        <h2>🔑 Đăng Nhập</h2>
+        <input type="text" id="user" placeholder="Tên tài khoản">
+        <input type="password" id="pass" placeholder="Mật khẩu">
+        <button onclick="login()">VÀO HỆ THỐNG</button>
+    </div>
+
+    <div id="menu-screen" class="hidden">
+        <h2>Chào, <span id="display-name" style="color:var(--accent)"></span>!</h2>
+        <div class="grid">
+            <div class="card" onclick="showLessons('Toán')">📐 TOÁN</div>
+            <div class="card" onclick="showLessons('Lý')">⚡ VẬT LÝ</div>
+            <div class="card" onclick="showLessons('Hóa')">🧪 HÓA HỌC</div>
+            <div class="card" onclick="showLessons('Anh')">🇬🇧 TIẾNG ANH</div>
+        </div>
+        <br><button onclick="openLeaderboard()" style="background:#f39c12">🏆 Ranking </button>
+    </div>
+<div id="quiz-screen" class="hidden">
+    <!-- Hàng trên cùng chứa nút Thoát và Tiêu đề -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <button class="btn-home" onclick="confirmGoHome()" style="margin: 0; background: #95a5a6;">🏠 Thoát</button>
+        <h2 id="quiz-header" style="margin: 0;"></h2>
+        <div style="width: 80px;"></div> <!-- Giữ cân bằng cho tiêu đề -->
+    </div>
+
+    <div id="question-container"></div>
+
+    <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+        <button onclick="submitQuiz()" id="btn-submit">NỘP BÀI</button>
+        <button class="btn-home" onclick="confirmGoHome()" style="background: #e74c3c;">HỦY LÀM BÀI</button>
+    </div>
+    
+    <p id="loading" class="hidden" style="color:var(--accent)">⌛ Đang lưu kết quả...</p>
+</div>
+    <div id="lesson-screen" class="hidden">
+        <h2 id="lesson-title"></h2>
+        <div id="lesson-list" class="grid"></div>
+        <br><button class="btn-home" onclick="showScreen('menu-screen')">QUAY LẠI</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <h2 id="quiz-header"></h2>
+        <div id="question-container"></div>
+        <button onclick="submitQuiz()" id="btn-submit">NỘP BÀI</button>
+        <p id="loading" class="hidden" style="color:var(--accent)">⌛ Đang kiểm tra và lưu điểm...</p>
+    </div>
+
+    <div id="post-quiz-screen" class="hidden">
+        <h2 style="color:var(--success)">Hoàn thành!</h2>
+        <h3>Điểm lần này: <span id="my-score"></span></h3>
+        <p id="score-status" style="font-weight:bold; color:var(--accent)"></p>
+        <button class="btn-home" onclick="showScreen('menu-screen')">VỀ TRANG CHỦ</button>
+    </div>
+
+    <div id="leaderboard-screen" class="hidden">
+        <h2>🏆 Ranking</h2>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <select id="rank-sub" onchange="updateRankFilter()"></select>
+            <select id="rank-lesson" onchange="loadRanks()"></select>
+        </div>
+        <table>
+            <thead><tr><th>Rank</th><th>Name</th><th>Score</th><th>Datetime</th></tr></thead>
+            <tbody id="leaderboard-body"></tbody>
+        </table>
+        <br><button class="btn-home" onclick="showScreen('menu-screen')">QUAY LẠI</button>
+    </div>
+</div>
+
+<script>
+    const validUsers = [{ u: "admin", p: "123" }, { u: "hocsinh1", p: "1" },{ u: "bang", p: "123" },{ u: "hoa", p: "123" },{ u: "khang", p: "123" },{ u: "bao", p: "123" }];
+    const database = {
+        "Toán": { "Đại số": [{ q: "2x = 4. x = ?", correct: "2" }] },
+        "Lý": { "Cơ học": [{ q: "Vận tốc vật rơi tự do sau 1s (g=10)?", correct: "10" }] },
+        "Hóa": { "Nguyên tố": [{ q: "Khối lượng mol O2?", correct: "32" }] },
+        "Anh": { "Bài luyện 1": [
+            { 
+                q: "Main stress: A. personal, B. different, C. interesting, D. fantastic", 
+                a: ["personal", "different", "interesting", "fantastic"], 
+                correct: 3 
+            },
+            { 
+                q: "Main stress: A. improve, B. fluent, C. practice, D. virtual", 
+                a: ["improve", "fluent", "practice", "virtual"], 
+                correct: 0 
+            },
+            { 
+                q: "Pronunciation (a): A. b<u>a</u>n, B. d<u>a</u>mage, C. l<u>a</u>ndfill, D. m<u>a</u>terial", 
+                a: ["ban", "damage", "landfill", "material"], 
+                correct: 3 
+            },
+            { 
+                q: "Pronunciation (o): A. micr<u>o</u>scope, B. m<u>o</u>de, C. gl<u>o</u>be, D. l<u>o</u>gin", 
+                a: ["microscope", "mode", "globe", "login"], 
+                correct: 3 
+            },
+            { 
+                q: "I found this book on my desk... It __________ by one of the students in the earlier class.", 
+                a: ["was leaving", "have left", "was left", "was leave"], 
+                correct: 2 
+            },
+            { 
+    q: "This is the place in New Zealand __________ they made the film The Lord of the Rings.", 
+    a: ["which", "that", "where", "on which"], 
+    correct: 2 
+},
+{ 
+    q: "I’m going away for a few days. I’ll phone you __________ I get back.", 
+    a: ["if", "whether", "until", "when"], 
+    correct: 3 
+},
+{ 
+    q: "Some people believe that tourism has a negative effect __________ the environment.", 
+    a: ["in", "on", "with", "for"], 
+    correct: 1 
+},
+{ 
+    q: "I was at the airport by 6 a.m. but my flight was __________.", 
+    a: ["taken off", "landed", "delayed", "missed"], 
+    correct: 2 
+},
+{ 
+    q: "Remember to leave the building quickly when you hear __________.", 
+    a: ["the fire alarm", "fire alarming", "boat trips", "elevator call"], 
+    correct: 0 
+},
+{ 
+    q: "Look! This language app is so cheap – just 4 dollars! I think I __________ download it to practice pronunciation.", 
+    a: ["am going to", "am not going to", "will not", "will"], 
+    correct: 3 
+},
+{ 
+    q: "He’s __________ a table for two at their favorite restaurant on Valentine’s Day.", 
+    a: ["rented", "registered", "booked", "called"], 
+    correct: 2 
+},
+{ 
+    q: "The doctor attached a monitor __________ the mother’s stomach so that she could listen to the baby's heartbeats.", 
+    a: ["to", "into", "with", "on"], 
+    correct: 0 
+},
+{ 
+    q: "Microplastics that are __________ from plastic water bottles can cause serious health problems.", 
+    a: ["dumped", "got rid", "released", "leaked"], 
+    correct: 2 
+},
+{ 
+    q: "When we were in Canada, we __________ almost every day.", 
+    a: ["were going skiing", "have gone skiing", "went skiing", "used to skiing"], 
+    correct: 2 
+},
+{ 
+    q: "Rent equipment must be returned to the front desk before the center closes. (Find the mistake)", 
+    a: ["Rent equipment", "be returned", "to the front desk", "closes"], 
+    correct: 0 
+},
+{ 
+    q: "Hai Phong is the place which I was born and grew up. (Find the mistake)", 
+    a: ["the place", "which", "born", "grew"], 
+    correct: 1 
+},
+{
+	q: "I know that we can’t really predict what will happen in the future, but I still think it is (19) ________ to try! I think that schools will be very different from what they are now. I think that there will be robot teachers in every classroom and for every subject. There will even be robot students, but the real human students won’t be able to tell who is a robot and who isn’t. The robot students will act as spies to make sure that the human students are studying in class, and not playing around. If a human student tries to (20) ________ in a test, the robot student will sound an alarm! Okay, maybe it won’t be that extreme. Actually, I don’t think that schooling in the future (21) ________ that different. I do think that there is going to be lots of technology used in schools, though. We already have an (22) ________ in our classroom, which is basically just a big touch screen attached to the teacher’s computer. I think that there will be more online classes so that schools don’t have to spend money on physical classrooms. That would be great! Then I could wear my pajamas to class every day. Then again, I do like seeing my friends at school… and (23) ________ could get quite boring. Thinking about it, I suppose I am happy with the way school is right now!",
+    a: [],
+    correct: -1
+},
+{ 
+    q: "(19) ________", 
+    a: ["boring", "bored", "funny", "fun"], 
+    correct: 3 
+},
+{ 
+    q: "(20) ________", 
+    a: ["cheat", "take", "achieve", "access"], 
+    correct: 0 
+},
+{ 
+    q: "(21) ________", 
+    a: ["might be", "is going to be", "will be", "is"], 
+    correct: 2 
+},
+{ 
+    q: "(22) ________", 
+    a: ["whiteboard", "artificial intelligent", "interactive board", "app"], 
+    correct: 2 
+},
+{ 
+    q: "(23) ________", 
+    a: ["e-learning", "pajamas", "classrooms", "friends"], 
+    correct: 0 
+},
+{
+	q: "Although you may have busy lives, helping the community is something that you should always make time for. Giving back not only helps you feel good, but it also brings many benefits to those around you. By participating in those meaningful voluntary activities, you can also make new friends, connect with the community, learn new skills, and even develop your career. There are many ways to give back to the community. Cleaning up your neighborhood is helpful to both the community and the environment. By picking up trash and doing some yard work, you can make your area a more pleasant place to live. Neighborhood cleanup is proof that even small acts of kindness can make a huge difference. Another way is to care about your neighbors and the people around you. By taking some time to get to know your neighbors, you can find out more about the challenges they face and develop ways to help them. Whether the solution is planning a budget, doing some grocery shopping, or even having a brief chat, a little effort can make a real change in their lives. If you have some extra money on hand, then consider donating a small amount to a local charity. Before you do, however, make sure that your charity of choice is a real one. Even by donating your unwanted possessions, you can help someone in need. You may also consider donating unwanted items to charity shops, or contributing unused food to a food bank.",
+    a: [],
+    correct: -1
+},
+{ 
+    q: "Helping the community is beneficial to both the community and the volunteers.", 
+    a: ["True", "False"], 
+    correct: 0 
+},
+{ 
+    q: "You can help the neighbors simply by spending time talking to them or helping them buy groceries.", 
+    a: ["True", "False"], 
+    correct: 0 
+},
+{ 
+    q: "You can make donations to charity only when you have a lot of money.", 
+    a: ["True", "False"], 
+    correct: 1 
+},
+{ 
+    q: "It is not easy to find a real and reliable charity to give donations to.", 
+    a: ["True", "False"], 
+    correct: 1 
+},
+{ 
+    q: "Donating fruits and vegetables is not a good idea.", 
+    a: ["True", "False"], 
+    correct: 1 
+},
+{ 
+    q: "Choose the correct sentence: 'Members can keep their personal belongings in lockers.'", 
+    a: [
+        "Members’ personal belongings can keep in lockers.", 
+        "Members’ personal belongings can be kept in lockers.", 
+        "Members’ personal belongings could be kept in lockers.", 
+        "Members’ personal belongings can be keep in lockers."
+    ], 
+    correct: 1 
+},
+{ 
+    q: "Choose the correct sentence: 'I’m not a scientist. I want to create vehicles that run on trash and waste.'", 
+    a: [
+        "If I am a scientist, I will create vehicles that run on trash and waste.", 
+        "If I were a scientist, I will create vehicles that run on trash and waste.", 
+        "If I were a scientist, I would create vehicles that run on trash and waste.", 
+        "If I was a scientist, I would created vehicles that run on trash and waste."
+    ], 
+    correct: 2 
+},
+{ 
+    q: "Combine using a relative clause: 'John Starley created the modern bicycle in 1885. He was an English inventor.'", 
+    a: [
+        "John Starley, who was an English inventor, created the modern bicycle in 1885.", 
+        "John Starley who was an English inventor created the modern bicycle in 1885.", 
+        "John Starley, that was an English inventor, created the modern bicycle in 1885.", 
+        "John Starley, which was an English inventor, created the modern bicycle in 1885."
+    ], 
+    correct: 0 
+},
+{ 
+    q: "Choose the correct sentence: 'During her trip in Delhi, Diana ate some shrimps and got food poisoning.'", 
+    a: [
+        "While Diana was traveling in Delhi, she ate some shrimps and got food poisoning.", 
+        "While Diana traveled in Delhi, she was eating some shrimps and got food poisoning.", 
+        "While Diana is traveling in Delhi, she ate some shrimps and got food poisoning.", 
+        "While during her trip in Delhi, Diana ate some shrimps and got food poisoning."
+    ], 
+    correct: 0 
+},
+{ 
+    q: "Choose the correct sentence: 'I have no plan to throw a birthday party next week.'", 
+    a: [
+        "I’m not throw a birthday party next week.", 
+        "I’m not plan to throw a birthday party next week.", 
+        "I’m not going to throw a birthday party next week.", 
+        "I’m not will throw a birthday party next week."
+    ], 
+    correct: 2 
+}
+
+
+            //vùng biên
+        ] 
+    }
+    };
+
+    const SHEETDB_URL = "https://sheetdb.io/api/v1/ovo9zetparrpi";
+    let currentUser = "", currentSub = "", currentLesson = "";
+
+    function showScreen(id) {
+        document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function login() {
+        const u = document.getElementById('user').value, p = document.getElementById('pass').value;
+        if(validUsers.find(x => x.u === u && x.p === p)) {
+            currentUser = u; document.getElementById('display-name').innerText = u; showScreen('menu-screen');
+        } else alert("Sai tài khoản!");
+    }
+
+    function showLessons(sub) {
+        currentSub = sub; showScreen('lesson-screen');
+        document.getElementById('lesson-title').innerText = "Môn " + sub;
+        document.getElementById('lesson-list').innerHTML = Object.keys(database[sub]).map(l => `
+            <div class="card" onclick="startQuiz('${l}')">${l}</div>
+        `).join('');
+    }
+
+    function startQuiz(lesson) {
+        currentLesson = lesson; showScreen('quiz-screen');
+        document.getElementById('quiz-header').innerText = lesson;
+        const qs = database[currentSub][lesson];
+        const labels = ["A", "B", "C", "D"];
+        document.getElementById('question-container').innerHTML = qs.map((item, idx) => {
+            let html = `<div class="question"><p><strong>Câu ${idx+1}:</strong> ${item.q}</p>`;
+            if (currentSub === "Anh") {
+                html += `<div class="options">${item.a.map((opt, i) => `
+                    <input type="radio" name="q${idx}" id="q${idx}_${i}" value="${i}">
+                    <label for="q${idx}_${i}" class="option-item" data-label="${labels[i]}.">${opt}</label>
+                `).join('')}</div>`;
+            } else {
+                html += `<input type="text" class="answer-input" id="q${idx}" maxlength="4" placeholder="?">`;
+            }
+            return html + `</div>`;
+        }).join('');
+    }
+
+    async function submitQuiz() {
+        let score = 0;
+        const qs = database[currentSub][currentLesson];
+        qs.forEach((item, idx) => {
+            if (currentSub === "Anh") {
+                const sel = document.querySelector(`input[name="q${idx}"]:checked`);
+                if (sel && parseInt(sel.value) === item.correct) score++;
+            } else {
+                if (document.getElementById(`q${idx}`).value.trim() === item.correct) score++;
+            }
+        });
+
+        document.getElementById('btn-submit').classList.add('hidden');
+        document.getElementById('loading').classList.remove('hidden');
+
+        // Gửi điểm (Hệ thống vẫn nhận mọi lần nộp, nhưng hiển thị sẽ lọc điểm cao nhất)
+        try {
+            await fetch(SHEETDB_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ data: [{
+                    name: currentUser, score: score, subject: currentSub,
+                    lesson: currentLesson, time: new Date().toLocaleString('vi-VN')
+                }]})
+            });
+        } catch(e) {}
+
+        document.getElementById('my-score').innerText = score + "/" + qs.length;
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('btn-submit').classList.remove('hidden');
+        showScreen('post-quiz-screen');
+    }
+
+    function openLeaderboard() {
+        showScreen('leaderboard-screen');
+        const subS = document.getElementById('rank-sub');
+        subS.innerHTML = Object.keys(database).map(s => `<option value="${s}">${s}</option>`).join('');
+        updateRankFilter();
+    }
+
+    function updateRankFilter() {
+        const sub = document.getElementById('rank-sub').value;
+        document.getElementById('rank-lesson').innerHTML = Object.keys(database[sub]).map(l => `<option value="${l}">${l}</option>`).join('');
+        loadRanks();
+    }
+    function confirmGoHome() {
+    const isConfirm = confirm("Tiến trình làm bài sẽ không được lưu. Bạn có chắc chắn muốn quay về trang chủ không?");
+    if (isConfirm) {
+        showScreen('menu-screen');
+    }
+}
+
+    async function loadRanks() {
+        const sub = document.getElementById('rank-sub').value;
+        const les = document.getElementById('rank-lesson').value;
+        const body = document.getElementById('leaderboard-body');
+        body.innerHTML = "<tr><td colspan='4'>Đang tải...</td></tr>";
+
+        try {
+            const res = await fetch(SHEETDB_URL);
+            const data = await res.json();
+
+            // LOGIC QUAN TRỌNG: Lọc lấy điểm cao nhất của mỗi người dùng
+            const bestScores = {};
+            data.forEach(entry => {
+                if(entry.subject === sub && entry.lesson === les) {
+                    const student = entry.name;
+                    const score = parseInt(entry.score);
+                    // Nếu chưa có tên này hoặc điểm mới >= điểm cũ thì cập nhật
+                    if (!bestScores[student] || score > bestScores[student].score) {
+                        bestScores[student] = {
+                            score: score,
+                            time: entry.time
+                        };
+                    }
+                }
+            });
+
+            // Chuyển object thành mảng để sắp xếp
+            const sortedRanks = Object.keys(bestScores).map(name => ({
+                name: name,
+                score: bestScores[name].score,
+                time: bestScores[name].time
+            })).sort((a,b) => b.score - a.score);
+
+            body.innerHTML = sortedRanks.map((r, i) => `
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${r.name}</td>
+                    <td style="font-weight:bold; color:var(--success)">${r.score}</td>
+                    <td>${r.time}</td>
+                </tr>
+            `).join('') || "<tr><td colspan='4'>Chưa có dữ liệu</td></tr>";
+        } catch(e) { body.innerHTML = "<tr><td colspan='4'>Lỗi tải dữ liệu!</td></tr>"; }
+    }
+</script>
+</body>
+</html>
