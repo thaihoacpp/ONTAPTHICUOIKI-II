@@ -5,6 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Ôn Thi - High Score Edition</title>
     <style>
+    
+    /* Khi người dùng nhấn chọn (chưa nộp bài) */
+.option-card.selected {
+    background-color: #3498db !important;
+    color: white;
+    border-color: #2980b9;
+}
+
+/* Khi đã nộp bài */
+.option-card.correct {
+    background-color: #2ecc71 !important;
+    color: white;
+    border-color: #27ae60;
+}
+
+.option-card.incorrect {
+    background-color: #e74c3c !important;
+    color: white;
+    border-color: #c0392b;
+}
+
+.option-card.disabled {
+    pointer-events: none;
+}
+.option-card.correct {
+    background-color: #2ecc71 !important; /* Màu xanh lá */
+    color: white;
+    border-color: #27ae60;
+}
+
+.option-card.incorrect {
+    background-color: #e74c3c !important; /* Màu đỏ */
+    color: white;
+    border-color: #c0392b;
+}
+
+.option-card.disabled {
+    pointer-events: none; /* Khóa nút sau khi đã chọn */
+    opacity: 0.8;
+}
         :root {
             --primary: #2c3e50; --secondary: #34495e; --accent: #3498db;
             --success: #27ae60; --danger: #e74c3c; --light: #ecf0f1;
@@ -45,6 +85,34 @@
         td { border: 1px solid #ddd; padding: 10px; }
         tr:nth-child(even) { background: #f9f9f9; }
         .btn-home { background: var(--secondary); }
+        .correct { background-color: #2ecc71 !important; color: white !important; border-radius: 5px; }
+.incorrect { background-color: #e74c3c !important; color: white !important; border-radius: 5px; }
+.disabled { pointer-events: none; opacity: 0.8; }
+.option-card.selected {
+    border: 2px solid #3498db !important;
+    background-color: #ebf5fb !important;
+    transform: scale(1.02); /* Phóng to nhẹ để tạo hiệu ứng thị giác */
+    transition: all 0.2s ease;
+}
+/* Màu cho ô nhập liệu đúng */
+.correct-input {
+    background-color: #2ecc71 !important;
+    color: white !important;
+    border: 2px solid #27ae60 !important;
+}
+
+/* Màu cho ô nhập liệu sai */
+.incorrect-input {
+    background-color: #fceae9 !important; /* Màu nền đỏ nhạt cho dễ nhìn chữ */
+    color: #e74c3c !important;
+    border: 2px solid #e74c3c !important;
+}
+
+/* Đảm bảo chữ trong input dễ đọc */
+.answer-input:disabled {
+    opacity: 1; /* Trình duyệt thường làm mờ input disabled, ta ép nó hiện rõ */
+    cursor: not-allowed;
+}
     </style>
 </head>
 <body>
@@ -370,37 +438,97 @@
     }
 
     async function submitQuiz() {
-        let score = 0;
-        const qs = database[currentSub][currentLesson];
-        qs.forEach((item, idx) => {
-            if (currentSub === "Anh") {
-                const sel = document.querySelector(`input[name="q${idx}"]:checked`);
-                if (sel && parseInt(sel.value) === item.correct) score++;
+    let score = 0;
+    const qs = database[currentSub][currentLesson];
+
+    qs.forEach((item, idx) => {
+        if (currentSub === "Anh") {
+            const selectedInput = document.querySelector(`input[name="q${idx}"]:checked`);
+            const correctValue = item.correct;
+            const allLabels = document.querySelectorAll(`label[for^="q${idx}_"]`);
+
+            // Khóa tất cả các lựa chọn
+            allLabels.forEach(label => label.classList.add('disabled'));
+
+            if (!selectedInput) {
+                // --- TRƯỜNG HỢP: CHƯA CHỌN ĐÁP ÁN ---
+                allLabels.forEach((label, i) => {
+                    if (i === correctValue) {
+                        label.classList.add('correct'); // Vẫn hiện đáp án đúng màu xanh
+                    } else {
+                        label.classList.add('incorrect'); // Tô đỏ các đáp án còn lại để báo hiệu chưa làm
+                    }
+                });
             } else {
-                if (document.getElementById(`q${idx}`).value.trim() === item.correct) score++;
+                // --- TRƯỜNG HỢP: ĐÃ CHỌN ---
+                const selectedValue = parseInt(selectedInput.value);
+                
+                item.a.forEach((opt, i) => {
+                    const label = document.querySelector(`label[for="q${idx}_${i}"]`);
+                    if (i === correctValue) {
+                        label.classList.add('correct'); // Đúng thì xanh
+                    } else if (i === selectedValue) {
+                        label.classList.add('incorrect'); // Bạn chọn sai thì ô đó đỏ
+                    }
+                });
+
+                if (selectedValue === correctValue) score++;
             }
+        } else {
+            // Logic cho môn Toán/Lý/Hóa
+            const inputField = document.getElementById(`q${idx}`);
+            if (inputField) {
+                const userVal = inputField.value.trim();
+                inputField.disabled = true;
+
+                if (userVal === "") {
+                    // Nếu bỏ trống ô nhập liệu
+                    inputField.classList.add('incorrect-input');
+                    inputField.placeholder = "Bỏ trống";
+                } else if (userVal === item.correct.toString().trim()) {
+                    inputField.classList.add('correct-input');
+                    score++;
+                } else {
+                    inputField.classList.add('incorrect-input');
+                }
+                
+                // Hiển thị đáp án đúng nếu làm sai hoặc bỏ trống
+                if (userVal !== item.correct.toString().trim()) {
+                    const feedback = document.createElement('div');
+                    feedback.innerHTML = `<small style="color: #e74c3c; display: block; margin-top: 5px;">
+                        Đáp án đúng: <b>${item.correct}</b>
+                    </small>`;
+                    inputField.parentNode.appendChild(feedback);
+                }
+            }
+        }
+    });
+
+    // --- PHẦN GỬI ĐIỂM VÀ HIỂN THỊ (Giữ nguyên) ---
+    document.getElementById('btn-submit').classList.add('hidden');
+    document.getElementById('loading').classList.remove('hidden');
+
+    try {
+        await fetch(SHEETDB_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ data: [{
+                name: currentUser, score: score, subject: currentSub,
+                lesson: currentLesson, time: new Date().toLocaleString('vi-VN')
+            }]})
         });
+    } catch(e) {}
 
-        document.getElementById('btn-submit').classList.add('hidden');
-        document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('my-score').innerText = score + "/" + qs.length;
+    document.getElementById('loading').classList.add('hidden');
+    
+    const submitBtn = document.getElementById('btn-submit');
+    submitBtn.innerText = "Xem Bảng Tổng Kết";
+    submitBtn.classList.remove('hidden');
+    submitBtn.onclick = () => showScreen('post-quiz-screen');
 
-        // Gửi điểm (Hệ thống vẫn nhận mọi lần nộp, nhưng hiển thị sẽ lọc điểm cao nhất)
-        try {
-            await fetch(SHEETDB_URL, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ data: [{
-                    name: currentUser, score: score, subject: currentSub,
-                    lesson: currentLesson, time: new Date().toLocaleString('vi-VN')
-                }]})
-            });
-        } catch(e) {}
-
-        document.getElementById('my-score').innerText = score + "/" + qs.length;
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('btn-submit').classList.remove('hidden');
-        showScreen('post-quiz-screen');
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
     function openLeaderboard() {
         showScreen('leaderboard-screen');
@@ -419,6 +547,30 @@
     if (isConfirm) {
         showScreen('menu-screen');
     }
+}
+let userAnswers = []; // Mảng lưu trữ câu trả lời của người dùng
+
+function selectOption(questionIndex, optionIndex) {
+    // 1. Tìm đúng hộp câu hỏi đang tương tác
+    const questionBox = document.querySelectorAll('.question-box')[questionIndex];
+    if (!questionBox) return;
+
+    // 2. Tìm tất cả các thẻ đáp án trong hộp đó
+    const cards = questionBox.querySelectorAll('.option-card');
+    
+    // 3. Xóa class 'selected' ở tất cả các thẻ (để reset màu khi chọn lại)
+    cards.forEach(card => card.classList.remove('selected'));
+    
+    // 4. Thêm class 'selected' vào thẻ vừa được click
+    cards[optionIndex].classList.add('selected');
+    
+    // 5. Cập nhật vào mảng lưu trữ đáp án (rất quan trọng)
+    // Mảng này phải được khai báo ở đầu file JS: let userAnswers = [];
+    userAnswers[questionIndex] = optionIndex;
+
+    // 6. (Tùy chọn) Nếu bạn có dùng radio button ẩn bên trong thẻ
+    const radio = cards[optionIndex].querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
 }
 
     async function loadRanks() {
