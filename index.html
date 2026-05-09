@@ -189,8 +189,83 @@
 <script>
     const validUsers = [{ u: "admin", p: "123" }, { u: "hocsinh1", p: "1" },{ u: "bang", p: "123" },{ u: "hoa", p: "123" },{ u: "khang", p: "123" },{ u: "bao", p: "123" }];
     const database = {
-        "Toán": { "Đại số": [{ q: "2x = 4. x = ?", correct: "2" }] },
-        "Lý": { "Cơ học": [{ q: "Vận tốc vật rơi tự do sau 1s (g=10)?", correct: "10" }] },
+        "Toán": { 
+        "Bài luyện 1": 
+        [
+        { 
+        q: "2x = 4. x = ?", 
+        correct: "2" 
+        }
+        ] 
+        },
+        "Lý": { 
+        "Bài luyện 1": [
+        { 
+        
+               q: "Một khẩu súng đại bác khối lượng 2000 kg bắn viên đạn 5 kg với vận tốc 600 m/s. Vận tốc giật lùi của súng là bao nhiêu (m/s)?", 
+                correct: "1.5" 
+            },
+            { 
+                q: "Hai vệ tinh nhân tạo I và II bay quanh Trái Đất trên quỹ đạo tròn bán kính lần lượt là r và 2r. Gọi tốc độ của vệ tinh I là v1 thì tốc độ của vệ tinh II là a/b vậy b là: ", 
+                correct: "1.41" 
+            },
+            { 
+                q: "Một người khối lượng m1 = 50kg đang chạy với vận tốc v1 = 4m/s thì nhảy lên một chiếc xe khối lượng m2 = 80 kg chạy song song ngang với người này với vận tốc v2 = 3 m/s. Sau đó, xe và người vẫn tiếp tục chuyển động theo phương cũ. Tính vận tốc xe sau khi người này nhảy lên nếu ban đầu xe và người chuyển động cùng chiều.", 
+                correct: "3.38" 
+            },
+            { 
+                q: "Một người khối lượng m1 = 50kg đang chạy với vận tốc v1 = 4m/s thì nhảy lên một chiếc xe khối lượng m2 = 80 kg chạy song song ngang với người này với vận tốc v2 = 3 m/s. Sau đó, xe và người vẫn tiếp tục chuyển động theo phương cũ. Tính vận tốc xe sau khi người này nhảy lên nếu ban đầu xe và người chuyển động ngược chiều.", 
+                correct: "0.31" 
+            },
+            { 
+                q: "Một lò xo có độ cứng 80 N/m được treo thẳng đứng. Khi móc vào đầu tự do của nó một vật có khối lượng 400 g thì lò xo dài 18 cm. Hỏi khi chưa móc vật thì lò xo dài bao nhiêu? Lấy g = 10 m/s2", 
+                correct: "13" 
+            },
+            { 
+                q: "Một lò xo có chiều dài tự nhiên là 30 cm, khi bị nén lò xo dài 24 cm và lực đàn hồi của nó bằng 5 N. Hỏi khi lực đàn hồi của lò xo bị nén bằng 10N thì chiều dài của nó bằng bao nhiêu?", 
+                correct: "18" 
+            },
+            { 
+                q: "Một ôtô khối lượng 20 tấn chuyển động chậm dần đều trên đường nằm ngang dưới tác dụng của lực ma sát, với hệ số ma sát μ = 0,3. Vận tốc đầu của ô tô là 54 km/h, sau một khoảng thì ôtô dừng. Tính độ lớn công của lực ma sát trong thời gian đó đổi sang MJ.", 
+                correct: "2.25" 
+            },
+            { 
+                q: "Một vật có khối lượng m = 5 kg trượt từ đỉnh xuống chân một mặt phẳng nghiêng có chiều dài S = 20 m và nghiêng góc 30° so với phương ngang. Công của trọng lực tác dụng lên vật khi vật đi hết dốc có độ lớn là", 
+                correct: "500" 
+            },
+            { 
+                q: "Một tên lửa có khối lượng M = 5 tấn đang chuyển động với vận tốc v = 100 m/s thì phụt ra phía sau một lượng khí m0 = 1 tấn. Vận tốc khí đối với tên lửa lúc chưa phụt là v1 = 400 m/s. Sau khi phụt khí vận tốc tên lửa có giá trị là:", 
+                correct: "200" 
+            },
+            { 
+                q: "Một vật có khối lượng 10 kg chịu tác dụng của 1 lực kéo 80 N có phương hợp với độ dời trên mặt phẳng nằm ngang 30 độ. Hệ số ma sát trượt giữa vật với mặt phẳng nằm ngang là k = 0,2. Lấy g = 10 m/s2. Hiệu suất của chuyển động khi vật đi được quãng đường 20 m là:", 
+                correct: "85.6" 
+            },
+            { 
+                q: "Một viên đạn khối lượng m = 0,1 kg bay ngang với vận tốc v0 = 200 m/s đến găm vào một bao cát khối lượng M = 1,9 kg đang treo đứng yên trên dây dài L. Sau va chạm, hệ vật cùng chuyển động. Tính hiệu suất chuyển đổi động năng đơn vị %", 
+                correct: "5" 
+            },
+            { 
+                q: "Một người y tá đẩy bệnh nhân nặng 87 kg trên chiếc xe băng ca nặng 18 kg làm cho bệnh nhân và xe băng ca chuyển động thẳng trên mặt sàn nằm ngang với gia tốc không đổi là 0,55 m/s2. Bỏ qua ma sát giữa bánh xe và mặt sàn. Tính lực đẩy của người y tá.", 
+                correct: "57.8" 
+            },
+            { 
+                q: "Một máy bay biểu diễn khối lượng m = 2000 kg thực hiện một vòng nhào lộn thẳng đứng có bán kính R = 200 m. Máy bay duy trì vận tốc không đổi v = 100 m/s suốt vòng đua. Tính áp lực N của phi công (khối lượng mp = 70 kg) nén lên ghế ngồi tại vị trí mà bán kính nối từ tâm vòng tròn đến máy bay hợp với phương thẳng đứng một góc α = 45 độ (đang ở nửa trên của vòng tròn). Lấy g = 10 m/s2", 
+                correct: "3005" 
+            },
+            { 
+                q: "Một máy bay biểu diễn thực hiện vòng nhào lộn thẳng đứng bán kính R = 250 m. Phi công có khối lượng m = 65 kg. Khi máy bay đi qua điểm cao nhất của vòng tròn, vận tốc của nó là v = 120 m/s. Lấy g = 10 m/s2. tính độ lớn áp lực của phi công lên ghế ngồi.", 
+                correct: "3089" 
+            },
+            { 
+                q: "Một chiếc xe ô tô có khối lượng m = 120 kg chuyển động đều với vận tốc v = 72 km/h đi qua một đoạn đường võng xuống (cầu lõm) có bán kính cong R = 50 m. Lấy g = 10 m/s2. tìm áp lực ở vị trí thấp nhất", 
+                correct: "2160" 
+            }
+            
+            
+        
+        ] 
+        },
         "Hóa": { "Nguyên tố": [{ q: "Khối lượng mol O2?", correct: "32" }] },
         "Anh": { "Bài luyện 1": [
             { 
